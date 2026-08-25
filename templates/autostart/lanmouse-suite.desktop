@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Lan Mouse Suite
+Comment=Trusted-LAN control window for Lan Mouse
+Exec=@GUI@
+Terminal=false
+Categories=Utility;Network;
+X-GNOME-Autostart-enabled=true

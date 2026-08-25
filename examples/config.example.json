@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "guard": {"failure_limit": 3, "interval_seconds": 10, "graphical_ready_seconds": 3},
+  "upstream": {
+    "binary": "lan-mouse",
+    "extra_args": ["daemon"],
+    "port": 4242,
+    "release_chord": ["KeyLeftCtrl", "KeyLeftShift", "KeyLeftAlt", "KeyLeftMeta"],
+    "authorized_fingerprints": {
+      "00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00": "replace-with-real-peer-fingerprint"
+    }
+  },
+  "profiles": [
+    {
+      "id": "home-lan",
+      "name": "Home LAN",
+      "cidr": "192.168.50.0/24",
+      "gateway": "192.168.50.1",
+      "ssid": "REPLACE-WITH-EXACT-SSID",
+      "peers": ["desk"],
+      "allow_tailscale": false
+    }
+  ],
+  "peers": [
+    {
+      "id": "desk",
+      "name": "Desktop",
+      "mdns": "desk.local",
+      "addresses": ["192.168.50.20"],
+      "tailscale_addresses": [],
+      "position": "right",
+      "port": 4242,
+      "probe_port": 22,
+      "ssh": {
+        "target": "operator@desk.local",
+        "remote_cli": "/absolute/path/to/lanmouse-suite"
+      },
+      "remote_control": {
+        "enabled": false,
+        "remote_peer_id": "replace-with-this-host-id-on-remote"
+      }
+    }
+  ],
+  "remote_control": {"endpoint_enabled": false},
+  "clipboard": {
+    "enabled": false,
+    "endpoint_enabled": false,
+    "poll_seconds": 0.8,
+    "backoff_seconds": 2.0,
+    "max_bytes": 200000,
+    "conflict_winner": "local"
+  },
+  "screenshots": {
+    "enabled": false,
+    "inbox_root": "",
+    "export_root": "",
+    "max_bytes": 20000000
+  }
+}

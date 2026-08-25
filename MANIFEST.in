@@ -1,0 +1,10 @@
+include README.md LICENSE pyproject.toml setup.cfg
+include install-linux.sh install-macos.sh install-windows.ps1
+include uninstall-linux.sh uninstall-macos.sh uninstall-windows.ps1
+recursive-include apps *
+recursive-include examples *
+recursive-include docs *
+recursive-include scripts *.py
+recursive-include templates *
+recursive-include tests *.py
+global-exclude *.py[cod]

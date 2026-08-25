@@ -1,0 +1,59 @@
+name: release-safety
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-14, windows-2022]
+        python: ["3.9", "3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Compile and test
+        shell: bash
+        run: |
+          python -m compileall -q src tests scripts
+          PYTHONPATH=src python -m unittest discover -s tests -v
+      - name: Unix installer and plist syntax
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          bash -n install-linux.sh install-macos.sh uninstall-linux.sh uninstall-macos.sh apps/macos/build-app.sh
+          python - <<'PY'
+          import plistlib
+          from pathlib import Path
+          for path in Path("templates/launchd").glob("*.plist"):
+              plistlib.loads(path.read_bytes())
+          plistlib.loads(Path("apps/macos/Info.plist").read_bytes())
+          PY
+      - name: PowerShell syntax
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path .\install-windows.ps1), [ref]$null, [ref]$errors)
+          if ($errors.Count) { $errors | Format-List | Out-String | Write-Error }
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path .\uninstall-windows.ps1), [ref]$null, [ref]$errors)
+          if ($errors.Count) { $errors | Format-List | Out-String | Write-Error }
+
+  arch-packages:
+    runs-on: ubuntu-24.04
+    container: archlinux:base-devel
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve declared Arch packages and import Tk
+        run: |
+          pacman -Syu --noconfirm
+          pacman -S --noconfirm --needed python python-pip tk wl-clipboard openssh lan-mouse
+          python -c 'import tkinter'

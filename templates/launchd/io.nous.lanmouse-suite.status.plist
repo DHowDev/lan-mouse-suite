@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>io.nous.lanmouse-suite.status</string>
+  <key>ProgramArguments</key><array><string>@APP_EXECUTABLE@</string></array>
+  <key>EnvironmentVariables</key><dict><key>LANMOUSE_SUITE_CLI</key><string>@CLI@</string></dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><false/>
+  <key>ProcessType</key><string>Interactive</string>
+  <key>ThrottleInterval</key><integer>5</integer>
+</dict></plist>
