@@ -141,6 +141,8 @@ lanmouse-suite service once
 lanmouse-suite gui
 ```
 
+The macOS menu-bar app polls `status --json` every few seconds with a bounded (15 s) CLI timeout. If a poll fails it keeps the last known device list and shows a "status stale, retrying…" banner instead of a dead "Status unavailable" menu; a hung CLI process is terminated so the app never freezes in a busy state.
+
 Manual OFF is persisted separately from transient guard failures. A trusted-network recovery never clears it. One cross-process lock serializes service/UI/CLI control and process state. Process ownership requires canonical executable path, exact argv with one exact managed `--config` relationship, and persisted creation identity (`/proc` NUL argv/start ticks on Linux; executable/creation time plus defensively parsed command line on macOS/Windows). Ambiguity refuses termination. Stop waits for confirmed exit; failed replacement restores the prior managed config and process.
 
 ### Clipboard

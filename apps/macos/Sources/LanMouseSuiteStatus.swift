@@ -39,7 +39,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let menu = NSMenu()
     private var timer: Timer?
     private var busy = false
+    private var refreshing = false
     private var latest: StatusPayload?
+    private var lastSuccess: Date?
 
     private var cliPath: String {
         let override = ProcessInfo.processInfo.environment["LANMOUSE_SUITE_CLI"]
@@ -59,12 +61,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func rebuildMenu(_ payload: StatusPayload?) {
+    private func rebuildMenu(_ payload: StatusPayload?, stale: Bool = false) {
         menu.removeAllItems()
         let title = NSMenuItem(title: "Lan Mouse Suite", action: nil, keyEquivalent: "")
         title.isEnabled = false
         menu.addItem(title)
-        let network = NSMenuItem(title: payload.map { "Network: \($0.network)" } ?? "Status unavailable", action: nil, keyEquivalent: "")
+        let networkTitle: String
+        if let payload, stale {
+            networkTitle = "Network: \(payload.network) — status stale, retrying…"
+        } else if let payload {
+            networkTitle = "Network: \(payload.network)"
+        } else {
+            networkTitle = "Status unavailable — retrying…"
+        }
+        let network = NSMenuItem(title: networkTitle, action: nil, keyEquivalent: "")
         network.isEnabled = false
         menu.addItem(network)
         menu.addItem(.separator())
@@ -98,31 +108,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let quit = NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q")
         quit.target = self
         menu.addItem(quit)
-        updateIcon(payload)
+        updateIcon(payload, stale: stale)
     }
 
-    private func updateIcon(_ payload: StatusPayload?) {
+    private func updateIcon(_ payload: StatusPayload?, stale: Bool = false) {
         let anyOn = payload?.any_on ?? false
         let symbol = anyOn ? "point.3.connected.trianglepath.dotted" : "cursorarrow.motionlines"
         let image = NSImage(systemSymbolName: symbol, accessibilityDescription: anyOn ? "Lan Mouse on" : "Lan Mouse off")
         image?.isTemplate = true
         statusItem.button?.image = image
         statusItem.button?.title = image == nil ? (anyOn ? "LM" : "LM×") : ""
-        statusItem.button?.appearsDisabled = !anyOn
-        let mode = payload?.manual_off == true ? "manual OFF" : (anyOn ? "connected" : "off")
+        statusItem.button?.appearsDisabled = !anyOn || stale
+        var mode = payload?.manual_off == true ? "manual OFF" : (anyOn ? "connected" : "off")
+        if stale { mode += " (stale)" }
         statusItem.button?.toolTip = "Lan Mouse Suite: \(mode) — \(payload?.network ?? "status unavailable")"
     }
 
     private func refresh() {
-        guard !busy else { return }
+        guard !busy, !refreshing else { return }
+        refreshing = true
         Task {
+            defer { refreshing = false }
             let output = await runCLI(["status", "--json"])
             guard output.code == 0, let data = output.stdout.data(using: .utf8),
                   let payload = try? JSONDecoder().decode(StatusPayload.self, from: data) else {
-                rebuildMenu(nil)
+                // Keep showing the last known devices instead of a dead menu;
+                // a stale banner tells the user the poll is failing.
+                rebuildMenu(latest, stale: true)
                 return
             }
             latest = payload
+            lastSuccess = Date()
             rebuildMenu(payload)
         }
     }
@@ -149,7 +165,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func runCLI(_ arguments: [String]) async -> (code: Int32, stdout: String) {
+    private func runCLI(_ arguments: [String], timeout: TimeInterval = 15) async -> (code: Int32, stdout: String) {
         let executable = cliPath
         return await Task.detached(priority: .userInitiated) { [executable] in
             let process = Process()
@@ -165,7 +181,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             process.standardError = Pipe()
             do {
                 try process.run()
-                process.waitUntilExit()
+                // Bounded wait: a hung CLI must never freeze the menu or
+                // leave the app stuck in a busy state (requires relaunch).
+                let deadline = Date().addingTimeInterval(timeout)
+                while process.isRunning && Date() < deadline {
+                    usleep(100_000)
+                }
+                if process.isRunning {
+                    process.terminate()
+                    let killDeadline = Date().addingTimeInterval(2)
+                    while process.isRunning && Date() < killDeadline {
+                        usleep(100_000)
+                    }
+                    if process.isRunning {
+                        kill(process.processIdentifier, SIGKILL)
+                    }
+                    return (124, "")
+                }
                 let text = String(data: output.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
                 return (process.terminationStatus, text)
             } catch {
