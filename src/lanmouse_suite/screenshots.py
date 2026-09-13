@@ -45,14 +45,21 @@ def remote_basename(path: str) -> str:
 def _relative_export(root: Path, requested: str) -> tuple:
     if not isinstance(requested, str) or not requested or "\x00" in requested:
         raise ScreenshotError("invalid screenshot path")
-    root = root.expanduser().resolve(strict=True)
+    lexical_root = Path(os.path.abspath(str(root.expanduser())))
+    root = lexical_root.resolve(strict=True)
     candidate = Path(requested).expanduser()
     if candidate.is_absolute():
         normalized = Path(os.path.abspath(str(candidate)))
         try:
             relative = normalized.relative_to(root)
-        except ValueError as exc:
-            raise ScreenshotError("path is outside configured root") from exc
+        except ValueError:
+            # Accept the configured root's lexical alias (macOS /var), but
+            # never resolve descendants: descriptor-relative O_NOFOLLOW below
+            # must still reject symlink leaves and parent directories.
+            try:
+                relative = normalized.relative_to(lexical_root)
+            except ValueError as exc:
+                raise ScreenshotError("path is outside configured root") from exc
     else:
         relative = candidate
     parts = relative.parts

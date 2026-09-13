@@ -21,7 +21,7 @@ class ControlWindow:
         root.minsize(520, 320)
         frame = ttk.Frame(root, padding=16)
         frame.pack(fill="both", expand=True)
-        ttk.Label(frame, text="Lan Mouse Suite", font=("TkDefaultFont", 18, "bold")).pack(anchor="w")
+        ttk.Label(frame, text="LANBRIDGE", font=("TkDefaultFont", 18, "bold")).pack(anchor="w")
         self.network = ttk.Label(frame, text="Checking network…")
         self.network.pack(anchor="w", pady=(4, 12))
         self.tree = ttk.Treeview(frame, columns=("state", "detail", "address"), show="headings", height=8)
@@ -37,6 +37,10 @@ class ControlWindow:
         ttk.Button(buttons, text="Open logs", command=self.open_logs).pack(side="right")
         self.footer = ttk.Label(frame, text="Emergency release: Control + Shift + Alt/Option + Command/Meta")
         self.footer.pack(anchor="w", pady=(12, 0))
+        from .mixer_ui import MixerPanel
+        self.mixer = MixerPanel(frame)
+        root.title("LANBRIDGE")
+        root.geometry("760x650")
         self.refresh()
 
     def command(self, args: List[str]) -> List[str]:

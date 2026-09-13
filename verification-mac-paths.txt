@@ -1,0 +1,12 @@
+Linux full suite
+----------------------------------------------------------------------
+Ran 58 tests in 0.934s
+
+OK
+
+Mac full suite and isolated withdrawn GUI smoke
+----------------------------------------------------------------------
+Ran 58 tests in 0.943s
+
+OK (skipped=2)
+macOS 15 (1507) or later required, have instead 15 (1506) !

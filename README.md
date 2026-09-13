@@ -1,4 +1,22 @@
-# Lan Mouse Suite
+# LANBRIDGE
+
+LANBRIDGE is the user-facing name; package IDs, installed app paths and CLI names remain `lanmouse-suite` for compatibility. Upstream attribution and licensing are unchanged.
+
+## Mac + Titan mixer (local review preview)
+
+Use the existing macOS status menu → **LANBRIDGE Mixer / Controls** to open the native AppKit NSPanel, or use `bash scripts/launch-mixer-macos.sh` for an isolated native mixer. No Tk is required for the native panel; `lanmouse-suite gui` remains the separate legacy Tk control window. Refresh discovers local OBS audio inputs that respond to volume/mute queries. The panel provides source-labelled gain (0–1) and mute controls, background reads, debounced slider writes, source rediscovery and write read-back. Connection/request errors disable native controls and show setup instructions.
+
+The existing Titan Audio UDP5012 → Mac OBS monitored audio remains authoritative; old UDP5013 stays disabled. Nothing here starts/stops recording, changes monitoring, installs drivers, changes output routing, or configures remote hosts. OBS source labels belong to the user: identify the Titan stream and Mac sources by their existing names. These are OBS mix controls, not macOS system volume or Titan per-app controls. Per-app Titan discovery/control is not implemented in this preview.
+
+Setup on Mac (explicit, not performed by this PR):
+
+1. For isolated review, build with `bash apps/macos/build-app.sh` and prepare a Python 3.9+ venv containing this package and optional `obsws-python>=1.7,<2`. Set `LANBRIDGE_MIXER_VENV` to that venv; `LANBRIDGE_MIXER_APP` can select an isolated app build. Do not reinstall over a working deployment just to review. New installations may use the existing installers without activation; no Titan installation is required solely for this local OBS mixer.
+2. In OBS → Tools → WebSocket Server Settings, manually enable the server and authentication on port 4455 after review. The supplied deployment previously had authentication enabled but the server disabled. Restrict server access to loopback with the appropriate host/network settings; enabling OBS WebSocket alone does not guarantee a loopback-only listener. The adapter connects only to literal `127.0.0.1:4455` and exposes no HTTP server.
+3. Run `bash scripts/launch-mixer-macos.sh`. It prompts without echo and passes `LANBRIDGE_OBS_PASSWORD` through the process environment, not command arguments, source files or frontend payloads. It does not persist the password or change OBS configuration. The status-menu path likewise requires the password in its launching environment; an already-running app does not inherit a later shell export.
+4. Refresh the native panel. Missing password, unavailable OBS or missing dependency leaves controls unavailable. Discovery is read-only; there is no automatic bootstrap mutation. Supported controls are only Mac OBS audio inputs, including an existing Titan stream input and any Mac capture/microphone/media inputs OBS exposes with volume/mute support. No system-wide Mac volume, output-device routing, remote Titan mixer or per-app discovery is provided.
+
+Verification: the supplied Mac `verification-native.txt` records 61 tests run, 2 skipped, no failures, and a native offline-panel smoke result. Native compilation/ad-hoc signing was reported by the implementation review; signature verification was independently repeated during PR preparation. Offline smoke is not visual QA or live audio evidence. Live OBS protocol/authentication, source discovery and gain/mute read-back, audible Mac/Titan behavior, UI interaction and end-to-end pairing remain unverified. This is not a verified live deployment or a one-click pairing bootstrap.
+
 
 Lan Mouse Suite is a small, standard-library Python companion for [upstream Lan Mouse](https://github.com/feschber/lan-mouse). It provides trusted-LAN detection, process ownership, a portable control window, a native macOS status item, bidirectional UTF-8 clipboard sync over OpenSSH, and an optional safe screenshot-path inbox.
 

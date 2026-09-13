@@ -1,0 +1,6 @@
+...........................................ss................
+----------------------------------------------------------------------
+Ran 61 tests in 0.910s
+
+OK (skipped=2)
+PASS native panel offline: controls disabled; setup explanation displayed

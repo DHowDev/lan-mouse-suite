@@ -52,6 +52,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        if CommandLine.arguments.contains("--mixer-only") {
+            openMixer()
+            return
+        }
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.setAccessibilityLabel("Lan Mouse Suite devices")
         statusItem.menu = menu
@@ -63,7 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func rebuildMenu(_ payload: StatusPayload?, stale: Bool = false) {
         menu.removeAllItems()
-        let title = NSMenuItem(title: "Lan Mouse Suite", action: nil, keyEquivalent: "")
+        let title = NSMenuItem(title: "LANBRIDGE", action: nil, keyEquivalent: "")
         title.isEnabled = false
         menu.addItem(title)
         let networkTitle: String
@@ -98,6 +102,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         off.target = self
         off.isEnabled = !busy
         menu.addItem(off)
+        let mixer = NSMenuItem(title: "LANBRIDGE Mixer / Controls", action: #selector(openMixer), keyEquivalent: "")
+        mixer.target = self
+        menu.addItem(mixer)
         let logs = NSMenuItem(title: "Open Logs", action: #selector(openLogs), keyEquivalent: "")
         logs.target = self
         menu.addItem(logs)
@@ -205,6 +212,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }.value
     }
+
+    private lazy var mixerPanel = NativeMixer()
+    @objc private func openMixer() { mixerPanel.show() }
 
     @objc private func openLogs() {
         let path = latest?.log_path ?? (NSHomeDirectory() + "/Library/Logs/LanMouseSuite/lanmouse-suite.log")

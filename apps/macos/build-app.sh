@@ -10,7 +10,7 @@ rm -rf "$STAGE" "$BACKUP"
 mkdir -p "$STAGE/Contents/MacOS"
 cp "$ROOT/Info.plist" "$STAGE/Contents/Info.plist"
 xcrun swiftc -parse-as-library -framework AppKit -framework Foundation \
-  "$ROOT/Sources/LanMouseSuiteStatus.swift" -o "$STAGE/Contents/MacOS/LanMouseSuiteStatus"
+  "$ROOT/Sources/"*.swift -o "$STAGE/Contents/MacOS/LanMouseSuiteStatus"
 codesign --force --deep --sign - "$STAGE"
 codesign --verify --deep --strict "$STAGE"
 if [ -e "$OUT" ]; then mv "$OUT" "$BACKUP"; fi
