@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-# Launch only the existing suite GUI; never activate services or restart OBS.
+# Native-only entry; leaves legacy suite GUI and running services untouched.
 set -euo pipefail
-VENV="$HOME/.local/share/lanmouse-suite/venv"
-[ -x "$VENV/bin/python" ] || { printf 'Run bash install-macos.sh first (without --activate).\n'; exit 2; }
-"$VENV/bin/python" -c 'import tkinter' || { printf 'Install a Python with Tk support before using the GUI.\n'; exit 2; }
-"$VENV/bin/python" -m pip install 'obsws-python>=1.7,<2'
-printf 'OBS: Tools → WebSocket Server Settings → enable server and authentication, port 4455.\nNo OBS settings or recording state are changed by this launcher.\n'
+ROOT="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
+VENV="${LANBRIDGE_MIXER_VENV:-$HOME/.local/share/lanmouse-suite/venv}"
+APP="${LANBRIDGE_MIXER_APP:-$ROOT/apps/macos/build/Lan Mouse Suite.app}"
+"$VENV/bin/python" -c 'import obsws_python; import lanmouse_suite.mixer_cli' || exit 2
+[ -x "$APP/Contents/MacOS/LanMouseSuiteStatus" ] || { printf 'Build first: bash apps/macos/build-app.sh\n'; exit 2; }
+printf 'Enable authenticated OBS WebSocket manually on loopback port 4455. No OBS settings are changed.\n'
 if [ -z "${LANBRIDGE_OBS_PASSWORD:-}" ]; then
   read -r -s -p 'OBS WebSocket password (not saved): ' LANBRIDGE_OBS_PASSWORD
   printf '\n'
 fi
 export LANBRIDGE_OBS_PASSWORD
-exec "$VENV/bin/lanmouse-suite-gui"
+export LANBRIDGE_MIXER_PYTHON="$VENV/bin/python"
+exec "$APP/Contents/MacOS/LanMouseSuiteStatus" --mixer-only

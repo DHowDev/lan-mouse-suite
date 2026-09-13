@@ -79,7 +79,7 @@ class ConfigTests(unittest.TestCase):
             self.assertEqual(pem.read_bytes(), b"PRIVATE IDENTITY BYTES")
             paths = SuitePaths(root / "suite-config", root / "state", root / "logs")
             target = write_managed_toml(config, [ResolvedPeer("desk", "Desk", "192.168.50.20", 4242, "right")], paths)
-            self.assertEqual(target, root / "config.lanmouse-suite.toml")
+            self.assertEqual(target, root.resolve() / "config.lanmouse-suite.toml")
             self.assertEqual(source.read_text(encoding="utf-8"), text)
             self.assertEqual(pem.read_bytes(), b"PRIVATE IDENTITY BYTES")
 

@@ -52,6 +52,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        if CommandLine.arguments.contains("--mixer-only") {
+            openMixer()
+            return
+        }
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.setAccessibilityLabel("Lan Mouse Suite devices")
         statusItem.menu = menu
@@ -209,18 +213,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }.value
     }
 
-    @objc private func openMixer() {
-        // A GUI is long lived: do not use runCLI's bounded status-command runner.
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
-        process.arguments = [cliPath, "gui"]
-        do { try process.run() } catch {
-            let alert = NSAlert()
-            alert.messageText = "LANBRIDGE controls could not launch"
-            alert.informativeText = "Check the installed suite CLI and Python Tk support."
-            alert.runModal()
-        }
-    }
+    private lazy var mixerPanel = NativeMixer()
+    @objc private func openMixer() { mixerPanel.show() }
 
     @objc private func openLogs() {
         let path = latest?.log_path ?? (NSHomeDirectory() + "/Library/Logs/LanMouseSuite/lanmouse-suite.log")
