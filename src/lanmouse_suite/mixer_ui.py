@@ -15,6 +15,7 @@ class MixerPanel(ttk.LabelFrame):
         self.status = ttk.Label(self, text="Not connected. Refresh to discover actual OBS audio sources.")
         self.status.pack(anchor="w")
         ttk.Label(self, text="Existing Titan UDP 5012 → Mac OBS monitoring stays authoritative. No routing changes.").pack(anchor="w")
+        ttk.Label(self, text="Setup: OBS → Tools → WebSocket Server Settings. Enable server and authentication,\nuse port 4455, then set LANBRIDGE_OBS_PASSWORD before launching this app.\nIf the server is disabled, enable it manually; this panel never edits OBS settings or restarts OBS.", wraplength=640).pack(anchor="w")
         self.refresh_button = ttk.Button(self, text="Refresh OBS sources", command=self.refresh)
         self.refresh_button.pack(anchor="w")
         self.rows = ttk.Frame(self)
