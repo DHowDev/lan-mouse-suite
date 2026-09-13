@@ -19,7 +19,7 @@ No output routing, monitoring changes, drivers, recording operations, OBS config
 - Adapter/bridge tests use injected clients. Current PR preparation reruns the full existing unittest suite, compileall, shell syntax and diff whitespace checks; final results are in the separate review report.
 
 ## Limitations
-Live OBS authentication, discovery, volume/mute read-back and audible Mac/Titan behavior remain unverified. Offline smoke does not establish visual/UI interaction quality. No Titan per-app controls, output routing or one-click pairing bootstrap. This is reviewable implementation, not a verified live deployment.
+The supplied live verification confirms native mixer launch and authenticated localhost OBS discovery/read access, with audio, mute, monitoring and recording state unchanged. Live volume/mute writes were not tested; audible behavior after control changes and end-to-end UI interaction remain unverified. Offline smoke does not establish visual/UI interaction quality. No Titan per-app controls, output routing or one-click pairing bootstrap.
 
 ## Submission
 This document is the proposed PR body, not a publication receipt. The separate PR-phase review report records the actual commit, push and PR outcome. No merge is authorized.
