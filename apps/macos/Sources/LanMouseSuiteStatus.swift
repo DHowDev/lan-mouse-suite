@@ -63,7 +63,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func rebuildMenu(_ payload: StatusPayload?, stale: Bool = false) {
         menu.removeAllItems()
-        let title = NSMenuItem(title: "Lan Mouse Suite", action: nil, keyEquivalent: "")
+        let title = NSMenuItem(title: "LANBRIDGE", action: nil, keyEquivalent: "")
         title.isEnabled = false
         menu.addItem(title)
         let networkTitle: String
@@ -98,6 +98,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         off.target = self
         off.isEnabled = !busy
         menu.addItem(off)
+        let mixer = NSMenuItem(title: "LANBRIDGE Mixer / Controls", action: #selector(openMixer), keyEquivalent: "")
+        mixer.target = self
+        menu.addItem(mixer)
         let logs = NSMenuItem(title: "Open Logs", action: #selector(openLogs), keyEquivalent: "")
         logs.target = self
         menu.addItem(logs)
@@ -204,6 +207,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 return (127, "")
             }
         }.value
+    }
+
+    @objc private func openMixer() {
+        // A GUI is long lived: do not use runCLI's bounded status-command runner.
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
+        process.arguments = [cliPath, "gui"]
+        do { try process.run() } catch {
+            let alert = NSAlert()
+            alert.messageText = "LANBRIDGE controls could not launch"
+            alert.informativeText = "Check the installed suite CLI and Python Tk support."
+            alert.runModal()
+        }
     }
 
     @objc private func openLogs() {
