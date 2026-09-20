@@ -41,6 +41,7 @@ def default_config() -> Dict[str, Any]:
             "backoff_seconds": 2.0,
             "max_bytes": 200000,
             "conflict_winner": "local",
+            "utf8_locale": "en_US.UTF-8",
         },
         "screenshots": {"enabled": False, "inbox_root": "", "export_root": "", "max_bytes": 20000000},
     }
@@ -197,6 +198,10 @@ def validate_config(raw: Dict[str, Any]) -> Dict[str, Any]:
     _number(clipboard.get("backoff_seconds", 2.0), "clipboard.backoff_seconds", 0.1, 300)
     if clipboard.get("conflict_winner", "local") not in {"local", "remote"}:
         raise ConfigError("clipboard.conflict_winner must be local or remote")
+    utf8_locale = clipboard.get("utf8_locale", "en_US.UTF-8")
+    if not isinstance(utf8_locale, str) or not re.fullmatch(r"[A-Za-z0-9._@-]{1,64}", utf8_locale):
+        raise ConfigError("clipboard.utf8_locale contains unsafe characters")
+    clipboard["utf8_locale"] = utf8_locale
 
     screenshots = _require_dict(config.get("screenshots", {}), "screenshots")
     enabled = _require_bool(screenshots.get("enabled", False), "screenshots.enabled")

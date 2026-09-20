@@ -180,7 +180,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     try:
         config = load_config(config_path, paths)
         logger = configure_logging(paths.log_file, args.verbose)
-        adapter = get_adapter()
+        utf8_locale = str(config.get("clipboard", {}).get("utf8_locale", "en_US.UTF-8"))
+        adapter = get_adapter(utf8_locale=utf8_locale)
         if args.command == "config":
             if args.config_command == "validate":
                 print("valid: " + str(config_path))

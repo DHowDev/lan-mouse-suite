@@ -228,11 +228,25 @@ class PlatformAdapter(ABC):
 
 
 class MacOSAdapter(PlatformAdapter):
+    def __init__(self, runner: Optional[CommandRunner] = None, utf8_locale: str = "en_US.UTF-8") -> None:
+        super().__init__(runner)
+        self.utf8_locale = utf8_locale
+
+    def _utf8_clipboard_command(self, executable: str) -> List[str]:
+        # pbcopy/pbpaste fall back to MacRoman when launchd provides no locale.
+        # Pass both variables explicitly so every CLI and service path is UTF-8.
+        return [
+            "/usr/bin/env",
+            "LANG=" + self.utf8_locale,
+            "LC_ALL=" + self.utf8_locale,
+            executable,
+        ]
+
     def clipboard_read_command(self) -> List[str]:
-        return ["/usr/bin/pbpaste"]
+        return self._utf8_clipboard_command("/usr/bin/pbpaste")
 
     def clipboard_write_command(self) -> List[str]:
-        return ["/usr/bin/pbcopy"]
+        return self._utf8_clipboard_command("/usr/bin/pbcopy")
 
     def network_snapshot(self) -> NetworkSnapshot:
         route = self.runner.run(["/sbin/route", "-n", "get", "default"], timeout=4)
@@ -499,12 +513,16 @@ class WindowsAdapter(PlatformAdapter):
         return self.runner.run([self.POWERSHELL, "-NoProfile", "-NonInteractive", "-Command", script], timeout=5).returncode == 0
 
 
-def get_adapter(system: Optional[str] = None, runner: Optional[CommandRunner] = None) -> PlatformAdapter:
+def get_adapter(
+    system: Optional[str] = None,
+    runner: Optional[CommandRunner] = None,
+    utf8_locale: str = "en_US.UTF-8",
+) -> PlatformAdapter:
     import platform
 
     name = system or platform.system()
     if name == "Darwin":
-        return MacOSAdapter(runner)
+        return MacOSAdapter(runner, utf8_locale=utf8_locale)
     if name == "Windows":
         return WindowsAdapter(runner)
     if name == "Linux":

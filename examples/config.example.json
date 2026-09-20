@@ -48,7 +48,8 @@
     "poll_seconds": 0.8,
     "backoff_seconds": 2.0,
     "max_bytes": 200000,
-    "conflict_winner": "local"
+    "conflict_winner": "local",
+    "utf8_locale": "en_US.UTF-8"
   },
   "screenshots": {
     "enabled": false,

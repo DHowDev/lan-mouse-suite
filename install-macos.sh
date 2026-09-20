@@ -39,8 +39,9 @@ CONFIGURE=("$VENV/bin/python" "$ROOT/scripts/configure-new-config.py" --config "
 if [ "$NEW_CONFIG" -eq 1 ]; then CONFIGURE+=(--new-config); fi
 "${CONFIGURE[@]}"
 if [ "$NEW_CONFIG" -eq 1 ]; then "$VENV/bin/lanmouse-suite" --config "$CONFIG_DIR/config.json" off >/dev/null; fi
-"$VENV/bin/python" -c 'from pathlib import Path; import sys; p=Path(sys.argv[1]).read_text().replace("@CLI@",sys.argv[3]).replace("@LOG_DIR@",sys.argv[4]); Path(sys.argv[2]).write_text(p)' \
-  "$ROOT/templates/launchd/io.nous.lanmouse-suite.service.plist" "$SERVICE_PLIST" "$VENV/bin/lanmouse-suite" "$LOG_DIR"
+UTF8_LOCALE="$("$VENV/bin/python" -c 'from pathlib import Path; import sys; from lanmouse_suite.config import load_config; print(load_config(Path(sys.argv[1]))["clipboard"]["utf8_locale"])' "$CONFIG_DIR/config.json")"
+"$VENV/bin/python" -c 'from pathlib import Path; import sys; p=Path(sys.argv[1]).read_text().replace("@CLI@",sys.argv[3]).replace("@LOG_DIR@",sys.argv[4]).replace("@UTF8_LOCALE@",sys.argv[5]); Path(sys.argv[2]).write_text(p)' \
+  "$ROOT/templates/launchd/io.nous.lanmouse-suite.service.plist" "$SERVICE_PLIST" "$VENV/bin/lanmouse-suite" "$LOG_DIR" "$UTF8_LOCALE"
 if command -v xcrun >/dev/null 2>&1; then
   "$ROOT/apps/macos/build-app.sh" "$APP"
 else

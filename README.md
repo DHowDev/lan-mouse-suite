@@ -34,6 +34,8 @@ screenshot pull: local CLI <-> ssh peer "lanmouse-suite screenshot export --requ
 
 Focused modules live under `src/lanmouse_suite/`: configuration/paths, OS adapters, network matching, TOML rendering, owned-process orchestration, clipboard state machine, screenshot validation, service loop, CLI, and Tk GUI. Commands are always argv arrays with `shell=False`. Clipboard text and screenshot paths are never interpolated into a remote command.
 
+On macOS, `pbcopy` and `pbpaste` can silently fall back to MacRoman when launched without locale variables. The suite passes both `LANG` and `LC_ALL` for every clipboard operation and writes them into the service LaunchAgent. Set `clipboard.utf8_locale` in `config.json` when the host uses a locale other than the portable default `en_US.UTF-8`; peer addresses, SSH targets, paths, and credentials remain configuration rather than source-code constants.
+
 ## Clean install
 
 Clone or unpack this repository locally. Review the installer before running it. Installers copy this local package into a private venv using the standard library only; setuptools, wheel, build isolation, and network access are not required. They never download-and-execute a remote script. **Every installer stages by default:** it installs files, templates, and a new config, but does not enable/start the service, Scheduled Task, status app, or Startup item. Activation is a separate `--activate` / `-Activate` cutover with state read-back.

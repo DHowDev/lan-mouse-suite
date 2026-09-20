@@ -38,6 +38,17 @@ class ConfigTests(unittest.TestCase):
             with self.assertRaises(ConfigError):
                 validate_config(config)
 
+    def test_clipboard_utf8_locale_is_configurable_and_shell_safe(self):
+        config = configured()
+        config["clipboard"]["utf8_locale"] = "C.UTF-8"
+        self.assertEqual(validate_config(config)["clipboard"]["utf8_locale"], "C.UTF-8")
+        for unsafe in ("en_US.UTF-8;id", "en_US.UTF-8 value", "", 123):
+            with self.subTest(locale=unsafe):
+                candidate = configured()
+                candidate["clipboard"]["utf8_locale"] = unsafe
+                with self.assertRaises(ConfigError):
+                    validate_config(candidate)
+
     def test_remote_control_requires_peer_id_and_ssh(self):
         config = configured()
         config["peers"][0]["remote_control"] = {"enabled": True}
