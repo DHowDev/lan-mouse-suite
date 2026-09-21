@@ -34,6 +34,10 @@ class SuitePaths:
         return self.state_dir / "clipboard.json"
 
     @property
+    def image_clipboard_state(self) -> Path:
+        return self.state_dir / "image-clipboard.json"
+
+    @property
     def control_lock(self) -> Path:
         return self.state_dir / "control.lock"
 

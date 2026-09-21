@@ -40,10 +40,12 @@ def default_config() -> Dict[str, Any]:
             "poll_seconds": 0.8,
             "backoff_seconds": 2.0,
             "max_bytes": 200000,
+            "image_enabled": False,
+            "image_max_bytes": 15000000,
             "conflict_winner": "local",
             "utf8_locale": "en_US.UTF-8",
         },
-        "screenshots": {"enabled": False, "inbox_root": "", "export_root": "", "max_bytes": 20000000},
+        "screenshots": {"enabled": False, "inbox_root": "", "export_root": "", "max_bytes": 20000000, "copy_path": False},
     }
 
 
@@ -196,6 +198,10 @@ def validate_config(raw: Dict[str, Any]) -> Dict[str, Any]:
         raise ConfigError("clipboard.max_bytes must be between 1 and 5000000")
     _number(clipboard.get("poll_seconds", 0.8), "clipboard.poll_seconds", 0.1, 60)
     _number(clipboard.get("backoff_seconds", 2.0), "clipboard.backoff_seconds", 0.1, 300)
+    _require_bool(clipboard.get("image_enabled", False), "clipboard.image_enabled")
+    image_max_bytes = clipboard.get("image_max_bytes", 15000000)
+    if isinstance(image_max_bytes, bool) or not isinstance(image_max_bytes, int) or not 1 <= image_max_bytes <= 200000000:
+        raise ConfigError("clipboard.image_max_bytes must be between 1 and 200000000")
     if clipboard.get("conflict_winner", "local") not in {"local", "remote"}:
         raise ConfigError("clipboard.conflict_winner must be local or remote")
     utf8_locale = clipboard.get("utf8_locale", "en_US.UTF-8")
@@ -205,6 +211,7 @@ def validate_config(raw: Dict[str, Any]) -> Dict[str, Any]:
 
     screenshots = _require_dict(config.get("screenshots", {}), "screenshots")
     enabled = _require_bool(screenshots.get("enabled", False), "screenshots.enabled")
+    _require_bool(screenshots.get("copy_path", False), "screenshots.copy_path")
     shot_max = screenshots.get("max_bytes", 20000000)
     if isinstance(shot_max, bool) or not isinstance(shot_max, int) or not 1 <= shot_max <= 200000000:
         raise ConfigError("screenshots.max_bytes is out of range")

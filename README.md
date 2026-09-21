@@ -149,15 +149,27 @@ Manual OFF is persisted separately from transient guard failures. A trusted-netw
 
 ### Clipboard
 
-Clipboard sync is UTF-8 text only, size-capped, and bidirectional:
+Clipboard sync is opt-in, size-capped, and bidirectional for UTF-8 text and PNG images:
 
 ```sh
 lanmouse-suite clipboard sync PEER_ID --once
+lanmouse-suite clipboard image-read > capture.png
+cat capture.png | lanmouse-suite clipboard image-write
 ```
 
-The state machine records only SHA-256 hashes after a successful delivery (or after observing both sides already equal). Failed deliveries are retried. Simultaneous edits use the configured deterministic conflict winner. Logs contain direction and byte count only—never clipboard text, private key data, or clipboard hashes.
+Enable `clipboard.enabled` for text and `clipboard.image_enabled` for PNG image sync. Configure `clipboard.image_max_bytes` separately from the text limit. The image protocol transfers bytes over the configured SSH peer and uses the same SHA-256 state/deterministic conflict handling without logging payloads. It requires `wl-clipboard` on Linux and an interactive macOS pasteboard session; unsupported platforms fail closed.
 
-### Optional screenshot path inbox
+The state machine records only SHA-256 hashes after a successful delivery (or after observing both sides already equal). Failed deliveries are retried. Simultaneous edits use the configured deterministic conflict winner. Logs contain direction and byte count only—never clipboard text, image data, private key data, or clipboard hashes.
+
+### Screenshot image and path handoff
+
+The screenshot inbox remains the portable fallback for SSH/Herdr/Hermes sessions. Use `--copy-path` for a text path or `--copy-image` for native image paste on the receiving desktop:
+
+```sh
+lanmouse-suite screenshot pull PEER_ID '/configured/export/root/capture.png' --copy-path --copy-image
+```
+
+For a screenshot created locally, the platform-specific screenshot tool can upload it into the configured inbox; the repository deliberately does not embed personal VPS/container commands. Configure the shared inbox/export roots and peer SSH command in each user's JSON instead.
 
 Enable screenshots and set absolute `inbox_root` and `export_root` paths independently on each endpoint. Pull a known remote path:
 

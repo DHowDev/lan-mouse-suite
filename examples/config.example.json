@@ -48,6 +48,8 @@
     "poll_seconds": 0.8,
     "backoff_seconds": 2.0,
     "max_bytes": 200000,
+    "image_enabled": false,
+    "image_max_bytes": 15000000,
     "conflict_winner": "local",
     "utf8_locale": "en_US.UTF-8"
   },
@@ -55,6 +57,7 @@
     "enabled": false,
     "inbox_root": "",
     "export_root": "",
-    "max_bytes": 20000000
+    "max_bytes": 20000000,
+    "copy_path": false
   }
 }

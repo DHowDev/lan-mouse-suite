@@ -116,6 +116,8 @@ class CommandRunner:
 
 
 class PlatformAdapter(ABC):
+    platform_name = ""
+
     def __init__(self, runner: Optional[CommandRunner] = None) -> None:
         self.runner = runner or CommandRunner()
 
@@ -156,6 +158,25 @@ class PlatformAdapter(ABC):
         except UnicodeDecodeError:
             return False
         return self.runner.run(self.clipboard_write_command(), data=data, timeout=3).returncode == 0
+
+    def image_clipboard_read_command(self) -> Optional[List[str]]:
+        return None
+
+    def image_clipboard_write_command(self) -> Optional[List[str]]:
+        return None
+
+    def read_image_clipboard(self, max_bytes: int) -> Optional[bytes]:
+        command = self.image_clipboard_read_command()
+        if command is None:
+            return None
+        result = self.runner.run_bounded(command, max_bytes, timeout=5)
+        return result.stdout if result.returncode == 0 and result.stdout else None
+
+    def write_image_clipboard(self, data: bytes, max_bytes: int) -> bool:
+        command = self.image_clipboard_write_command()
+        if command is None or not data or len(data) > max_bytes:
+            return False
+        return self.runner.run(command, data=data, timeout=5).returncode == 0
 
     def resolve_ipv4(self, hostname: str) -> List[str]:
         found = []
@@ -228,6 +249,8 @@ class PlatformAdapter(ABC):
 
 
 class MacOSAdapter(PlatformAdapter):
+    platform_name = "Darwin"
+
     def __init__(self, runner: Optional[CommandRunner] = None, utf8_locale: str = "en_US.UTF-8") -> None:
         super().__init__(runner)
         self.utf8_locale = utf8_locale
@@ -247,6 +270,9 @@ class MacOSAdapter(PlatformAdapter):
 
     def clipboard_write_command(self) -> List[str]:
         return self._utf8_clipboard_command("/usr/bin/pbcopy")
+
+    def image_clipboard_read_command(self) -> Optional[List[str]]:
+        return ["/usr/bin/osascript", "-e", "get (the clipboard as «class PNGf»)"]
 
     def network_snapshot(self) -> NetworkSnapshot:
         route = self.runner.run(["/sbin/route", "-n", "get", "default"], timeout=4)
@@ -338,6 +364,8 @@ class MacOSAdapter(PlatformAdapter):
 
 
 class LinuxAdapter(PlatformAdapter):
+    platform_name = "Linux"
+
     def clipboard_read_command(self) -> List[str]:
         return ["wl-paste", "--type", "text/plain", "--no-newline"]
 
@@ -437,6 +465,7 @@ class LinuxAdapter(PlatformAdapter):
 
 
 class WindowsAdapter(PlatformAdapter):
+    platform_name = "Windows"
     POWERSHELL = "powershell.exe"
 
     def clipboard_read_command(self) -> List[str]:

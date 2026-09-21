@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from .adapters import get_adapter
 from .clipboard import ClipboardSynchronizer, RemoteClipboard
+from .image_clipboard import RemoteImageClipboard, read_local, write_local
 from .config import ConfigError, default_config, import_existing_config, load_config, save_config
 from .doctor import doctor_report
 from .logging_utils import configure_logging
@@ -49,6 +50,8 @@ def _parser() -> argparse.ArgumentParser:
     clipboard_sub = clipboard.add_subparsers(dest="clipboard_command", required=True)
     clipboard_sub.add_parser("read")
     clipboard_sub.add_parser("write")
+    clipboard_sub.add_parser("image-read")
+    clipboard_sub.add_parser("image-write")
     sync = clipboard_sub.add_parser("sync")
     sync.add_argument("peer")
     sync.add_argument("--once", action="store_true")
@@ -62,6 +65,7 @@ def _parser() -> argparse.ArgumentParser:
     pull.add_argument("peer")
     pull.add_argument("remote_path")
     pull.add_argument("--copy-path", action="store_true")
+    pull.add_argument("--copy-image", action="store_true")
 
     config = commands.add_parser("config", help="initialize, validate, or migrate config")
     config_sub = config.add_subparsers(dest="config_command", required=True)
@@ -104,7 +108,7 @@ def _clipboard(args: argparse.Namespace, config: Dict[str, Any], paths: SuitePat
     settings = config.get("clipboard", {})
     max_bytes = int(settings.get("max_bytes", 200000))
     action = args.clipboard_command
-    if action in {"read", "write"} and not settings.get("endpoint_enabled", False):
+    if action in {"read", "write", "image-read", "image-write"} and not settings.get("endpoint_enabled", False):
         raise ConfigError("clipboard endpoint is disabled")
     if action == "read":
         data = adapter.read_clipboard(max_bytes)
@@ -118,6 +122,20 @@ def _clipboard(args: argparse.Namespace, config: Dict[str, Any], paths: SuitePat
             print("clipboard payload exceeds configured limit", file=sys.stderr)
             return 2
         return 0 if adapter.write_clipboard(data, max_bytes) else 1
+    if action == "image-read":
+        if not settings.get("image_enabled", False):
+            raise ConfigError("image clipboard synchronization is disabled")
+        data = read_local(adapter.platform_name, int(settings.get("image_max_bytes", 15000000)))
+        if data is None:
+            return 1
+        sys.stdout.buffer.write(data)
+        return 0
+    if action == "image-write":
+        if not settings.get("image_enabled", False):
+            raise ConfigError("image clipboard synchronization is disabled")
+        image_max = int(settings.get("image_max_bytes", 15000000))
+        data = sys.stdin.buffer.read(image_max + 1)
+        return 0 if write_local(adapter.platform_name, data, image_max) else 1
     if not settings.get("enabled", False):
         raise ConfigError("clipboard synchronization is disabled")
     peer = _peer(config, args.peer)
@@ -153,6 +171,12 @@ def _screenshot(args: argparse.Namespace, config: Dict[str, Any], adapter: Any) 
     target = pull_screenshot(
         peer, args.remote_path, Path(settings["inbox_root"]), max_bytes, adapter, copy_path=args.copy_path
     )
+    if args.copy_image:
+        if not config.get("clipboard", {}).get("image_enabled", False):
+            raise ConfigError("image clipboard synchronization is disabled")
+        image_max = int(config.get("clipboard", {}).get("image_max_bytes", 15000000))
+        if not write_local(adapter.platform_name, target.read_bytes(), image_max):
+            raise ScreenshotError("screenshot received but image clipboard handoff failed")
     print(str(target))
     return 0
 
