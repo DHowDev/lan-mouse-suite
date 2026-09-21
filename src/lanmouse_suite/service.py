@@ -6,6 +6,7 @@ from typing import Any, Dict
 
 from .adapters import PlatformAdapter
 from .clipboard import ClipboardSynchronizer, RemoteClipboard
+from .image_clipboard import ImageClipboardSynchronizer
 from .orchestration import Orchestrator
 from .paths import SuitePaths
 
@@ -33,21 +34,33 @@ class SuiteService:
         if not graphical_ready():
             return {"_local": "graphical-environment-unavailable"}
         status = self.orchestrator.status(probe=False, include_remote=False)
-        if clipboard.get("enabled", False) and status["process"].get("running"):
+        if (clipboard.get("enabled", False) or clipboard.get("image_enabled", False)) and status["process"].get("running"):
             active = {row["id"] for row in status["devices"] if row["on"]}
             for peer in self.config.get("peers", []):
                 if peer["id"] not in active or not peer.get("ssh", {}).get("target"):
                     continue
-                sync = ClipboardSynchronizer(
-                    peer["id"],
-                    self.adapter,
-                    RemoteClipboard(peer),
-                    self.paths.clipboard_state,
-                    int(clipboard.get("max_bytes", 200000)),
-                    clipboard.get("conflict_winner", "local"),
-                    self.logger,
-                )
-                clipboard_results[peer["id"]] = sync.sync_once()
+                if clipboard.get("enabled", False):
+                    sync = ClipboardSynchronizer(
+                        peer["id"],
+                        self.adapter,
+                        RemoteClipboard(peer),
+                        self.paths.clipboard_state,
+                        int(clipboard.get("max_bytes", 200000)),
+                        clipboard.get("conflict_winner", "local"),
+                        self.logger,
+                    )
+                    clipboard_results[peer["id"]] = sync.sync_once()
+                if clipboard.get("image_enabled", False):
+                    image_sync = ImageClipboardSynchronizer(
+                        peer["id"],
+                        self.adapter.platform_name,
+                        peer,
+                        self.paths.image_clipboard_state,
+                        int(clipboard.get("image_max_bytes", 15000000)),
+                        clipboard.get("conflict_winner", "local"),
+                        self.logger,
+                    )
+                    clipboard_results[peer["id"] + ":image"] = image_sync.sync_once()
         return clipboard_results
 
     def run(self) -> None:
@@ -57,7 +70,7 @@ class SuiteService:
                 signal.signal(value, self.stop)
         guard_interval = float(self.config.get("guard", {}).get("interval_seconds", 10))
         clipboard = self.config.get("clipboard", {})
-        clipboard_enabled = bool(clipboard.get("enabled", False))
+        clipboard_enabled = bool(clipboard.get("enabled", False) or clipboard.get("image_enabled", False))
         clipboard_interval = float(clipboard.get("poll_seconds", 0.8))
         clipboard_backoff = float(clipboard.get("backoff_seconds", 2.0))
         next_guard = 0.0

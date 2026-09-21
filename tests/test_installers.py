@@ -25,6 +25,10 @@ class InstallerSafetyTests(unittest.TestCase):
         plist = (ROOT / "templates/launchd/io.nous.lanmouse-suite.status.plist").read_text(encoding="utf-8")
         self.assertIn("io.nous.lanmouse-suite.status", plist)
         self.assertIn("@APP_EXECUTABLE@", plist)
+        service_plist = (ROOT / "templates/launchd/io.nous.lanmouse-suite.service.plist").read_text(encoding="utf-8")
+        self.assertIn("<key>LANG</key><string>@UTF8_LOCALE@</string>", service_plist)
+        self.assertIn("<key>LC_ALL</key><string>@UTF8_LOCALE@</string>", service_plist)
+        self.assertIn('"@UTF8_LOCALE@"', script)
 
     def test_windows_native_calls_are_guarded_and_task_is_read_back(self):
         text = (ROOT / "install-windows.ps1").read_text(encoding="utf-8")

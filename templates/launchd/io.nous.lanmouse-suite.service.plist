@@ -6,6 +6,10 @@
   <key>RunAtLoad</key><true/>
   <key>KeepAlive</key><true/>
   <key>ThrottleInterval</key><integer>5</integer>
+  <key>EnvironmentVariables</key><dict>
+    <key>LANG</key><string>@UTF8_LOCALE@</string>
+    <key>LC_ALL</key><string>@UTF8_LOCALE@</string>
+  </dict>
   <key>StandardOutPath</key><string>@LOG_DIR@/service.out.log</string>
   <key>StandardErrorPath</key><string>@LOG_DIR@/service.err.log</string>
 </dict></plist>

@@ -28,9 +28,10 @@ class FakeRunner(CommandRunner):
 class AdapterCommandTests(unittest.TestCase):
     def test_macos_commands_and_parsing(self):
         runner = FakeRunner([(0, b"gateway: 192.168.1.1\ninterface: en0\n"), (0, b"192.168.1.9\n")])
-        adapter = MacOSAdapter(runner)
-        self.assertEqual(adapter.clipboard_read_command(), ["/usr/bin/pbpaste"])
-        self.assertEqual(adapter.clipboard_write_command(), ["/usr/bin/pbcopy"])
+        adapter = MacOSAdapter(runner, utf8_locale="en_US.UTF-8")
+        prefix = ["/usr/bin/env", "LANG=en_US.UTF-8", "LC_ALL=en_US.UTF-8"]
+        self.assertEqual(adapter.clipboard_read_command(), prefix + ["/usr/bin/pbpaste"])
+        self.assertEqual(adapter.clipboard_write_command(), prefix + ["/usr/bin/pbcopy"])
         snapshot = adapter.network_snapshot()
         self.assertEqual(snapshot.interface, "en0")
         self.assertEqual(runner.calls[1][0], ["/usr/sbin/ipconfig", "getifaddr", "en0"])
